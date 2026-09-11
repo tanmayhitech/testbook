@@ -1,0 +1,292 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RepositoryVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MemberRole {
+  OWNER
+  CONTRIBUTOR
+  VIEWER
+}
+
+enum CommitStatus {
+  ACTIVE
+  REVERTED
+}
+
+enum IssueStatus {
+  OPEN
+  CLOSED
+}
+
+enum PullRequestStatus {
+  OPEN
+  APPROVED
+  CHANGES_REQUESTED
+  MERGED
+  CLOSED
+}
+
+enum ReviewStatus {
+  APPROVED
+  CHANGES_REQUESTED
+  COMMENTED
+}
+
+enum FileChangeType {
+  ADDED
+  MODIFIED
+  DELETED
+}
+
+enum ActivityType {
+  REPOSITORY_CREATED
+  MEMBER_ADDED
+  BRANCH_CREATED
+  COMMIT_CREATED
+  ISSUE_CREATED
+  ISSUE_CLOSED
+  PULL_REQUEST_CREATED
+  PULL_REQUEST_MERGED
+  PULL_REQUEST_CLOSED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedRepositories Repository[]       @relation("RepositoryOwner")
+  memberships       RepositoryMember[]
+  commits           Commit[]
+  issues            Issue[]
+  pullRequests      PullRequest[]
+  reviews           PullRequestReview[]
+  activities        Activity[]
+  issueComments     IssueComment[]
+  pullComments      PullRequestComment[]
+}
+
+model Repository {
+  id          String               @id @default(cuid())
+  name        String
+  description String?
+  visibility  RepositoryVisibility @default(PRIVATE)
+  ownerId     String
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  owner         User               @relation("RepositoryOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members       RepositoryMember[]
+  branches      Branch[]
+  commits       Commit[]
+  files         File[]
+  issues        Issue[]
+  pullRequests  PullRequest[]
+  activities    Activity[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+}
+
+model RepositoryMember {
+  id           String     @id @default(cuid())
+  repositoryId String
+  userId       String
+  role         MemberRole @default(CONTRIBUTOR)
+  createdAt    DateTime   @default(now())
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, userId])
+  @@index([userId])
+}
+
+model Branch {
+  id           String   @id @default(cuid())
+  repositoryId String
+  name         String
+  createdAt    DateTime @default(now())
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  commits    Commit[]
+
+  sourcePullRequests PullRequest[] @relation("SourceBranch")
+  targetPullRequests PullRequest[] @relation("TargetBranch")
+
+  @@unique([repositoryId, name])
+  @@index([repositoryId])
+}
+
+model Commit {
+  id           String       @id @default(cuid())
+  repositoryId String
+  branchId     String
+  authorId     String
+  message      String
+  status       CommitStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+
+  repository Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  branch     Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  files      CommitFile[]
+
+  @@index([repositoryId])
+  @@index([branchId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model File {
+  id           String   @id @default(cuid())
+  repositoryId String
+  path         String
+  storagePath  String
+  size         Int      @default(0)
+  mimeType     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  repository Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  commits    CommitFile[]
+
+  @@unique([repositoryId, path])
+  @@index([repositoryId])
+}
+
+model CommitFile {
+  id         String         @id @default(cuid())
+  commitId   String
+  fileId     String
+  changeType FileChangeType
+
+  commit Commit @relation(fields: [commitId], references: [id], onDelete: Cascade)
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([commitId, fileId])
+  @@index([fileId])
+}
+
+model Issue {
+  id           String      @id @default(cuid())
+  repositoryId String
+  authorId     String
+  title        String
+  description  String?
+  status       IssueStatus @default(OPEN)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  closedAt     DateTime?
+
+  repository Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author     User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments   IssueComment[]
+
+  @@index([repositoryId])
+  @@index([authorId])
+  @@index([status])
+}
+
+model IssueComment {
+  id        String   @id @default(cuid())
+  issueId   String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issue  Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+}
+
+model PullRequest {
+  id             String           @id @default(cuid())
+  repositoryId   String
+  authorId       String
+  sourceBranchId String
+  targetBranchId String
+  title          String
+  description    String?
+  status         PullRequestStatus @default(OPEN)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  mergedAt       DateTime?
+
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  sourceBranch Branch @relation("SourceBranch", fields: [sourceBranchId], references: [id], onDelete: Cascade)
+  targetBranch Branch @relation("TargetBranch", fields: [targetBranchId], references: [id], onDelete: Cascade)
+
+  reviews  PullRequestReview[]
+  comments PullRequestComment[]
+
+  @@index([repositoryId])
+  @@index([authorId])
+  @@index([sourceBranchId])
+  @@index([targetBranchId])
+  @@index([status])
+}
+
+model PullRequestReview {
+  id           String       @id @default(cuid())
+  pullRequestId String
+  reviewerId   String
+  status       ReviewStatus
+  comment      String?
+  createdAt    DateTime     @default(now())
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([pullRequestId])
+  @@index([reviewerId])
+}
+
+model PullRequestComment {
+  id           String   @id @default(cuid())
+  pullRequestId String
+  authorId     String
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pullRequest PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([pullRequestId])
+}
+
+model Activity {
+  id           String       @id @default(cuid())
+  repositoryId String
+  userId       String
+  type         ActivityType
+  message      String?
+  createdAt    DateTime     @default(now())
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@index([userId])
+  @@index([createdAt])
+}

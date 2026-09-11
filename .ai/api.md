@@ -1,14 +1,29 @@
 # TESTBOOK API
 
-Base:
+Base URL:
 
 /api
 
-## Health
+---
+
+# HEALTH
 
 GET /api/health
 
-## Authentication
+Purpose:
+
+Check whether the backend is running.
+
+Response:
+
+{
+  "success": true,
+  "message": "Testbook API is running"
+}
+
+---
+
+# AUTHENTICATION
 
 POST /api/auth/register
 
@@ -18,7 +33,17 @@ POST /api/auth/logout
 
 GET /api/auth/me
 
-## Repositories
+---
+
+# USERS
+
+GET /api/users/:username
+
+PATCH /api/users/me
+
+---
+
+# REPOSITORIES
 
 GET /api/repositories
 
@@ -30,17 +55,23 @@ PATCH /api/repositories/:id
 
 DELETE /api/repositories/:id
 
-## Files
+---
+
+# FILES
 
 GET /api/repositories/:id/files
 
 POST /api/repositories/:id/files
 
+GET /api/repositories/:id/files/:fileId
+
 PATCH /api/repositories/:id/files/:fileId
 
 DELETE /api/repositories/:id/files/:fileId
 
-## Branches
+---
+
+# BRANCHES
 
 GET /api/repositories/:id/branches
 
@@ -48,7 +79,33 @@ POST /api/repositories/:id/branches
 
 DELETE /api/repositories/:id/branches/:branchId
 
-## Pull Requests
+---
+
+# COMMITS
+
+GET /api/repositories/:id/commits
+
+POST /api/repositories/:id/commits
+
+GET /api/repositories/:id/commits/:commitId
+
+---
+
+# ISSUES
+
+GET /api/repositories/:id/issues
+
+POST /api/repositories/:id/issues
+
+GET /api/issues/:id
+
+PATCH /api/issues/:id
+
+DELETE /api/issues/:id
+
+---
+
+# PULL REQUESTS
 
 GET /api/repositories/:id/pulls
 
