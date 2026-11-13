@@ -52,3 +52,34 @@ export const authenticate = (
     });
   }
 };
+
+/**
+ * Middleware that extracts userId if token is present, but doesn't reject if not present
+ */
+export const optionalAuthenticate = (
+  req: AuthenticatedRequest,
+  _res: Response,
+  next: NextFunction
+) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, JWT_SECRET);
+
+      if (
+        typeof decoded === "object" &&
+        decoded !== null &&
+        "userId" in decoded &&
+        typeof decoded.userId === "string"
+      ) {
+        req.userId = decoded.userId;
+      }
+    }
+  } catch {
+    // Ignore invalid token in optional authentication
+  }
+
+  next();
+};
