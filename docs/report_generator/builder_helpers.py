@@ -16,12 +16,12 @@ def set_cell_shading(cell, color_hex):
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color_hex}"/>')
     tcPr.append(shd)
 
-def set_cell_margins(cell, top=30, bottom=30, left=60, right=60):
+def set_cell_margins(cell, top=35, bottom=35, left=70, right=70):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = parse_xml(f'<w:tcMar {nsdecls("w")}><w:top w:w="{top}" w:type="dxa"/><w:bottom w:w="{bottom}" w:type="dxa"/><w:left w:w="{left}" w:type="dxa"/><w:right w:w="{right}" w:type="dxa"/></w:tcMar>')
     tcPr.append(tcMar)
 
-def add_clean_table(doc, headers, rows, col_widths=None, header_bg="D9E1F2", zebra=False, font_size=8.5, cell_pad=25):
+def add_clean_table(doc, headers, rows, col_widths=None, header_bg="D9E1F2", zebra=False, font_size=9.5, cell_pad=35):
     table = doc.add_table(rows=len(rows) + 1, cols=len(headers))
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.autofit = False
@@ -36,7 +36,7 @@ def add_clean_table(doc, headers, rows, col_widths=None, header_bg="D9E1F2", zeb
         p = hdr_cells[i].paragraphs[0]
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(0)
-        p.paragraph_format.line_spacing = 1.0
+        p.paragraph_format.line_spacing = 1.05
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         for run in p.runs:
             run.font.name = "Times New Roman"
@@ -56,7 +56,7 @@ def add_clean_table(doc, headers, rows, col_widths=None, header_bg="D9E1F2", zeb
             p = row_cells[c_idx].paragraphs[0]
             p.paragraph_format.space_before = Pt(0)
             p.paragraph_format.space_after = Pt(0)
-            p.paragraph_format.line_spacing = 1.0
+            p.paragraph_format.line_spacing = 1.05
             p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             for run in p.runs:
                 run.font.name = "Times New Roman"
@@ -74,12 +74,12 @@ def add_clean_table(doc, headers, rows, col_widths=None, header_bg="D9E1F2", zeb
 
 def add_heading_1(doc, text):
     p = doc.add_paragraph()
-    p.paragraph_format.space_before = Pt(3)
+    p.paragraph_format.space_before = Pt(4)
     p.paragraph_format.space_after = Pt(3)
     p.paragraph_format.keep_with_next = True
     run = p.add_run(text)
     run.font.name = "Times New Roman"
-    run.font.size = Pt(13)
+    run.font.size = Pt(14)
     run.font.bold = True
     return p
 
@@ -90,11 +90,11 @@ def add_heading_2(doc, text):
     p.paragraph_format.keep_with_next = True
     run = p.add_run(text)
     run.font.name = "Times New Roman"
-    run.font.size = Pt(11.5)
+    run.font.size = Pt(12)
     run.font.bold = True
     return p
 
-def add_p(doc, text, bold_prefix=None, space_after=1.5, line_spacing=1.10):
+def add_p(doc, text, bold_prefix=None, space_after=3.0, line_spacing=1.15, font_size=11.0):
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(space_after)
@@ -102,29 +102,29 @@ def add_p(doc, text, bold_prefix=None, space_after=1.5, line_spacing=1.10):
     if bold_prefix:
         brun = p.add_run(bold_prefix)
         brun.font.name = "Times New Roman"
-        brun.font.size = Pt(10.5)
+        brun.font.size = Pt(font_size)
         brun.font.bold = True
     run = p.add_run(text)
     run.font.name = "Times New Roman"
-    run.font.size = Pt(10.5)
+    run.font.size = Pt(font_size)
     return p
 
-def add_bullet(doc, text, bold_prefix=None, space_after=1.0):
+def add_bullet(doc, text, bold_prefix=None, space_after=2.0, line_spacing=1.15, font_size=11.0):
     p = doc.add_paragraph(style='List Bullet')
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(space_after)
-    p.paragraph_format.line_spacing = 1.10
+    p.paragraph_format.line_spacing = line_spacing
     if bold_prefix:
         brun = p.add_run(bold_prefix)
         brun.font.name = "Times New Roman"
-        brun.font.size = Pt(10.5)
+        brun.font.size = Pt(font_size)
         brun.font.bold = True
     run = p.add_run(text)
     run.font.name = "Times New Roman"
-    run.font.size = Pt(10.5)
+    run.font.size = Pt(font_size)
     return p
 
-def add_screenshot_figure(doc, img_path, fig_title, fig_desc, max_height_in=3.6):
+def add_screenshot_figure(doc, img_path, fig_title, fig_caption, walkthrough_bullets=None, max_height_in=3.1):
     add_heading_2(doc, fig_title)
     if os.path.exists(img_path):
         im = Image.open(img_path)
@@ -136,24 +136,39 @@ def add_screenshot_figure(doc, img_path, fig_title, fig_desc, max_height_in=3.6)
 
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.paragraph_format.space_before = Pt(4)
-        p.paragraph_format.space_after = Pt(4)
+        p.paragraph_format.space_before = Pt(2)
+        p.paragraph_format.space_after = Pt(3)
         run = p.add_run()
         w_px, h_px = im.size
-        target_w = 5.6
+        target_w = 5.8
         target_h = (h_px / w_px) * target_w
         if target_h > max_height_in:
             target_h = max_height_in
             target_w = (w_px / h_px) * target_h
         run.add_picture(bio, width=Inches(target_w), height=Inches(target_h))
 
-    p_desc = doc.add_paragraph()
-    p_desc.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_desc.paragraph_format.space_after = Pt(2)
-    run_d = p_desc.add_run(fig_desc)
-    run_d.font.name = "Times New Roman"
-    run_d.font.size = Pt(9.5)
-    run_d.font.italic = True
+    p_caption = doc.add_paragraph()
+    p_caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_caption.paragraph_format.space_before = Pt(1)
+    p_caption.paragraph_format.space_after = Pt(4)
+    run_c = p_caption.add_run(fig_caption)
+    run_c.font.name = "Times New Roman"
+    run_c.font.size = Pt(10.0)
+    run_c.font.bold = True
+    run_c.font.italic = True
+
+    if walkthrough_bullets:
+        pw = doc.add_paragraph()
+        pw.paragraph_format.space_before = Pt(2)
+        pw.paragraph_format.space_after = Pt(2)
+        pw.paragraph_format.keep_with_next = True
+        run_wh = pw.add_run("Interface Architecture & Operational Flow:")
+        run_wh.font.name = "Times New Roman"
+        run_wh.font.size = Pt(10.5)
+        run_wh.font.bold = True
+
+        for b_prefix, b_text in walkthrough_bullets:
+            add_bullet(doc, b_text, bold_prefix=b_prefix, space_after=2.0, line_spacing=1.12, font_size=10.0)
 
 def add_code_snippet(doc, code_str, caption):
     table = doc.add_table(rows=1, cols=1)
@@ -167,16 +182,16 @@ def add_code_snippet(doc, code_str, caption):
     for i, line in enumerate(lines):
         p = cell.paragraphs[0] if i == 0 else cell.add_paragraph()
         p.paragraph_format.space_after = Pt(0)
-        p.paragraph_format.line_spacing = 1.0
+        p.paragraph_format.line_spacing = 1.05
         run = p.add_run(line)
         run.font.name = "Consolas"
-        run.font.size = Pt(8.0)
+        run.font.size = Pt(8.5)
 
     cp = doc.add_paragraph()
-    cp.paragraph_format.space_before = Pt(1)
+    cp.paragraph_format.space_before = Pt(2)
     cp.paragraph_format.space_after = Pt(3)
     crun = cp.add_run(caption)
     crun.font.name = "Times New Roman"
-    crun.font.size = Pt(9)
+    crun.font.size = Pt(9.5)
     crun.font.italic = True
     crun.font.bold = True
